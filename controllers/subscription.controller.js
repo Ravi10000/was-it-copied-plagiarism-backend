@@ -37,18 +37,15 @@ export async function createSubscription(req, res) {
 export async function updateSubscription(req, res) {
   console.log("updating subscription");
   const { id } = req?.params;
-  console.log({ id });
   if (!id) return res.status(400).json({ message: "No id provided" });
   try {
     const newSubscription = await subscription.findByIdAndUpdate(id, req.body, {
       new: true,
     });
-    console.log({ newSubscription });
     if (!newSubscription)
       return res.status(404).json({ message: "No subscription found" });
 
     const subscriptions = await subscription.find().sort({ price: "asc" });
-    console.log({ subscriptions });
     res.status(201).json({ status: "success", subscriptions });
   } catch (err) {
     console.log(err.message);
