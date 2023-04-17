@@ -5,6 +5,11 @@ import userRoutes from "./routes/user.route.js";
 import subscriptionRoutes from "./routes/subscription.route.js";
 import transactionRoutes from "./routes/transaction.route.js";
 
+// import { engine } from "express-handlebars";
+// import path from "path";
+// import * as url from "url";
+// const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+
 const app = express(); // Create express app
 
 // Connect to MongoDB
@@ -15,6 +20,11 @@ mongoose.connection.on("error", (err) => {
 mongoose.connection.once("open", () => {
   console.log("Connected to MongoDB");
 });
+
+// app.engine("handlebars", engine());
+// app.set("view engine", "handlebars");
+// app.set("views", "./views");
+// app.use(express.static(path.join(__dirname, "public")));
 
 // parse application/x-www-form-urlencoded and application/json
 app.use(express.json());

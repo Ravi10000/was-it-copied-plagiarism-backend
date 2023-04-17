@@ -4,6 +4,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import User from "../models/user.model.js";
+import EmailVerification from "../models/email-verification.model.js";
+import sendEmail from "../utils/emailer.js";
+
 // GET /api/users
 export async function fetchAllUsers(req, res) {
   try {
@@ -38,6 +41,7 @@ export async function signup(req, res) {
     return res.status(400).json({ message: "Missing required fields" });
 
   const existingUser = await User.findOne({ email });
+
   if (existingUser) {
     return res.status(200).json({
       status: "user exist",
@@ -50,11 +54,21 @@ export async function signup(req, res) {
 
   try {
     const newUser = await User.create(userData);
-    const user = await User.findById(newUser._id).select(
-      "-hash -createdAt -_id -__v"
-    );
-    console.log({ user });
-    res.status(201).json({ status: "success", user });
+    // const user = await User.findById(newUser._id).select(
+    //   "-hash -createdAt -_id -__v"
+    // );
+    const newEmailVerification = await EmailVerification.create({
+      user: newUser?._id,
+    });
+    const verificationLink = `http://localhost:4000/api/users/${newEmailVerification._id}`;
+    const mailInfo = await sendEmail({
+      to: newUser?.email,
+      verificationLink,
+    });
+    console.log({ mailInfo });
+    return res.status(200).json({
+      status: "success",
+    });
   } catch (err) {
     console.log(err.message);
   }
@@ -63,17 +77,35 @@ export async function signup(req, res) {
 export async function signin(req, res) {
   console.log("signin called");
   if (!req?.body) return res.status(400).json({ message: "No data provided" });
+
   const body = req?.body;
   if (!body?.email || !body?.password)
     return res.status(400).json({ message: "Missing required fields" });
   console.log({ body });
+
   try {
     const user = await User.findOne({ email: body.email });
     console.log({ user });
     if (!user) return res.status(404).json({ message: "User not found" });
-    const isMatch = await bcrypt.compare(body.password, user.hash);
+
+    const isMatch = bcrypt.compare(body.password, user.hash);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
+
+    if (!user?.isVerified) {
+      const newEmailVerification = await EmailVerification.create({
+        user: user?._id,
+      });
+      const verificationLink = `http://localhost:4000/api/users/${newEmailVerification._id}`;
+      const mailInfo = await sendEmail({
+        to: user?.email,
+        verificationLink,
+      });
+      console.log({ mailInfo });
+      return res.status(200).json({
+        status: "not verified",
+      });
+    }
 
     const authToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1y",
@@ -116,6 +148,46 @@ export async function updateUserDetails(req, res) {
     );
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(201).json({ status: "success", user });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function verifyEmail(req, res) {
+  const { token } = req?.params;
+  console.log({ token });
+  try {
+    const verification = await EmailVerification.findById(token);
+    if (!verification)
+      return res.status(404).json({ message: "Invalid token" });
+    const user = await User.findById(verification.user);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    user.isVerified = true;
+    await user.save();
+    await EmailVerification.findByIdAndDelete(verification._id);
+    res.status(200).send("Email verified successfully, try logging in now");
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function resendVerificationEmail(req, res) {
+  try {
+    const user = await User.findOne({ email: req?.params?.email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const newEmailVerification = await EmailVerification.create({
+      user,
+    });
+    const verificationLink = `http://localhost:4000/api/users/${newEmailVerification._id}`;
+    await sendEmail({
+      to: user?.email,
+      verificationLink,
+    });
+    res
+      .status(200)
+      .json({ status: "success", message: "Verification email sent" });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Internal server error" });
