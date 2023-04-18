@@ -9,7 +9,7 @@ import subscriptionRoutes from "./routes/subscription.route.js";
 import transactionRoutes from "./routes/transaction.route.js";
 import path from "path";
 
-// import { engine } from "express-handlebars";
+import { engine } from "express-handlebars";
 // import * as url from "url";
 // const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
@@ -24,11 +24,17 @@ mongoose.connection.once("open", () => {
   console.log("Connected to MongoDB");
 });
 
-// app.engine("handlebars", engine());
-// app.set("view engine", "handlebars");
-// app.set("views", "./views");
-app.use(express.static(path.resolve("./public")));
-// console.log(path.resolve("./public"));
+app.engine(
+  ".hbs",
+  engine({
+    extname: ".hbs",
+    defaultLayout: false,
+    layoutsDir: "views",
+  })
+);
+app.set("view engine", "hbs");
+app.use(express.static("public"));
+app.set("views", "views");
 
 // parse application/x-www-form-urlencoded and application/json
 app.use(express.json());
@@ -36,6 +42,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS
 app.use(cors());
+
+app.get("/test", (req, res) => {
+  res.render("verify-email", {
+    verificationLink: "http://localhost:4000/verify/123",
+  });
+});
 
 // routes
 app.use("/api/users", userRoutes);

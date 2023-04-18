@@ -61,11 +61,13 @@ export async function signup(req, res) {
       user: newUser?._id,
     });
     const verificationLink = `${process.env.API_URL}/api/users/${newEmailVerification._id}`;
-    const mailInfo = await sendEmail({
+    const mail = await sendEmail({
       to: newUser?.email,
       verificationLink,
     });
-    console.log({ mailInfo });
+    console.log({ mail });
+    if (mail.error)
+      return res.status(500).json({ message: "Internal server error" });
     return res.status(200).json({
       status: "success",
     });
@@ -181,7 +183,6 @@ export async function verifyEmail(req, res) {
     await user.save();
     await EmailVerification.findByIdAndDelete(verification._id);
     res.redirect(`${process.env.APP_URL}/verified`);
-    // res.status(200).send("Email verified successfully, try logging in now");
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Internal server error" });
@@ -197,10 +198,12 @@ export async function resendVerificationEmail(req, res) {
       user,
     });
     const verificationLink = `http://localhost:4000/api/users/${newEmailVerification._id}`;
-    await sendEmail({
+    const mail = await sendEmail({
       to: user?.email,
       verificationLink,
     });
+    if (mail.error)
+      return res.status(500).json({ message: "Internal server error" });
     res
       .status(200)
       .json({ status: "success", message: "Verification email sent" });
