@@ -3,14 +3,18 @@ import hbs from "nodemailer-express-handlebars";
 import path from "path";
 import dotEnv from "dotenv";
 dotEnv.config();
+console.log(process.env.API_URL);
 // console.log(process.env);
 async function sendEmail({ to, verificationLink }) {
   const transporter = createTransport({
-    host: "smtp.ethereal.email",
+    // host: "smtp.ethereal.email",
+    service: "gmail",
     port: 587,
     auth: {
-      user: "lorena.corwin@ethereal.email",
-      pass: "kHNq5ZbVRBHXKqpxXM",
+      user: "sale.mr.phonex@gmail.com",
+      pass: "ysnmjiqskhlhirho",
+      // user: "lorena.corwin@ethereal.email",
+      // pass: "kHNq5ZbVRBHXKqpxXM",
     },
   });
   const handlebarOptions = {
@@ -25,11 +29,12 @@ async function sendEmail({ to, verificationLink }) {
   transporter.use("compile", hbs(handlebarOptions));
 
   const mailOptions = {
-    from: `verify email <lorena.corwin@ethereal.email>`,
+    from: `verify email <plagiarism-checker@gmail.com>`,
     to,
     subject: "Verify your email",
     template: "verify-email",
     context: {
+      apiUrl: process.env.API_URL,
       verificationLink,
     },
     // html: `<h1><a href="${verificationLink}">verify</a></h1>`,

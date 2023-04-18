@@ -1,19 +1,22 @@
+import dotEnv from "dotenv";
+dotEnv.config();
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import userRoutes from "./routes/user.route.js";
 import subscriptionRoutes from "./routes/subscription.route.js";
 import transactionRoutes from "./routes/transaction.route.js";
+import path from "path";
 
 // import { engine } from "express-handlebars";
-// import path from "path";
 // import * as url from "url";
 // const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 const app = express(); // Create express app
 
 // Connect to MongoDB
-mongoose.connect("mongodb://localhost:27017/plagiarism-checker");
+mongoose.connect(process.env.DB_URL);
 mongoose.connection.on("error", (err) => {
   console.log(err.message);
 });
@@ -24,7 +27,8 @@ mongoose.connection.once("open", () => {
 // app.engine("handlebars", engine());
 // app.set("view engine", "handlebars");
 // app.set("views", "./views");
-// app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.resolve("./public")));
+// console.log(path.resolve("./public"));
 
 // parse application/x-www-form-urlencoded and application/json
 app.use(express.json());

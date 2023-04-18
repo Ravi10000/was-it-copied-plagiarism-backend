@@ -40,7 +40,7 @@ export async function signup(req, res) {
   if (!fname || !lname || !email || !password)
     return res.status(400).json({ message: "Missing required fields" });
 
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
 
   if (existingUser) {
     return res.status(200).json({
@@ -50,7 +50,7 @@ export async function signup(req, res) {
   }
 
   const hash = await bcrypt.hash(password, 10);
-  const userData = { fname, lname, email, hash };
+  const userData = { fname, lname, email: email.toLowerCase(), hash };
 
   try {
     const newUser = await User.create(userData);
@@ -60,7 +60,7 @@ export async function signup(req, res) {
     const newEmailVerification = await EmailVerification.create({
       user: newUser?._id,
     });
-    const verificationLink = `http://localhost:4000/api/users/${newEmailVerification._id}`;
+    const verificationLink = `${process.env.API_URL}/api/users/${newEmailVerification._id}`;
     const mailInfo = await sendEmail({
       to: newUser?.email,
       verificationLink,
@@ -76,27 +76,39 @@ export async function signup(req, res) {
 
 export async function signin(req, res) {
   console.log("signin called");
-  if (!req?.body) return res.status(400).json({ message: "No data provided" });
+  if (!req?.body)
+    return res
+      .status(400)
+      .json({ status: "error", message: "No data provided" });
 
   const body = req?.body;
   if (!body?.email || !body?.password)
-    return res.status(400).json({ message: "Missing required fields" });
-  console.log({ body });
+    return res
+      .status(404)
+      .json({ status: "error", message: "Missing required fields" });
 
   try {
     const user = await User.findOne({ email: body.email });
     console.log({ user });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user)
+      return res
+        .status(401)
+        .json({ status: "error", message: "User not found" });
 
-    const isMatch = bcrypt.compare(body.password, user.hash);
+    const isMatch = await bcrypt.compare(body.password, user.hash);
+    console.log({ isMatch });
     if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res
+        .status(200)
+        .json({ status: "error", message: "Invalid credentials" });
+
+    await EmailVerification.deleteMany({ user: user._id });
 
     if (!user?.isVerified) {
       const newEmailVerification = await EmailVerification.create({
         user: user?._id,
       });
-      const verificationLink = `http://localhost:4000/api/users/${newEmailVerification._id}`;
+      const verificationLink = `${process.env.API_URL}/api/users/${newEmailVerification._id}`;
       const mailInfo = await sendEmail({
         to: user?.email,
         verificationLink,
@@ -160,13 +172,16 @@ export async function verifyEmail(req, res) {
   try {
     const verification = await EmailVerification.findById(token);
     if (!verification)
-      return res.status(404).json({ message: "Invalid token" });
+      return res.status(404).json({
+        message: "Token Expired! please click on resend verification link",
+      });
     const user = await User.findById(verification.user);
     if (!user) return res.status(404).json({ message: "User not found" });
     user.isVerified = true;
     await user.save();
     await EmailVerification.findByIdAndDelete(verification._id);
-    res.status(200).send("Email verified successfully, try logging in now");
+    res.redirect(`${process.env.APP_URL}/verified`);
+    // res.status(200).send("Email verified successfully, try logging in now");
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Internal server error" });
@@ -177,6 +192,7 @@ export async function resendVerificationEmail(req, res) {
   try {
     const user = await User.findOne({ email: req?.params?.email });
     if (!user) return res.status(404).json({ message: "User not found" });
+    await EmailVerification.deleteMany({ user: user._id });
     const newEmailVerification = await EmailVerification.create({
       user,
     });
