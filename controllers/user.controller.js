@@ -10,7 +10,7 @@ import sendEmail from "../utils/emailer.js";
 // GET /api/users
 export async function fetchAllUsers(req, res) {
   try {
-    const users = await User.find();
+    const users = await User.find().populate("currentSubscriptionPlan");
     if (!users) return res.status(404).json({ message: "No users found" });
     res.status(201).json({ status: "success", users });
   } catch (err) {

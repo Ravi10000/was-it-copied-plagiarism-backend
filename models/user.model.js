@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema({
   },
   currentSubscriptionPlan: {
     type: Schema.Types.ObjectId,
+    ref: "Subscription",
   },
   isVerified: {
     type: Boolean,
