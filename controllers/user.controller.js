@@ -18,6 +18,18 @@ export async function fetchAllUsers(req, res) {
   }
 }
 
+export async function fetchAllAdmins(req, res) {
+  console.log("fetching all admins");
+  try {
+    const users = await User.find({ usertype: "ADMIN" });
+    console.log({ users });
+    if (!users) return res.status(404).json({ message: "No users found" });
+    res.status(201).json({ status: "success", users });
+  } catch (err) {
+    console.log(err.message);
+  }
+}
+
 export async function checkAuth(req, res) {
   if (!req.user) return res.status(400).json({ message: "No user found" });
 
@@ -29,6 +41,48 @@ export async function checkAuth(req, res) {
     res.status(201).json({ status: "success", user });
   } catch (err) {
     console.log(err.message);
+  }
+}
+
+export async function createAdmin(req, res) {
+  if (
+    !req?.body?.email ||
+    !req?.body?.password ||
+    !req?.body?.fname ||
+    !req?.body?.lname
+  ) {
+    return res
+      .status(200)
+      .json({ status: "error", message: "Missing required fields" });
+  }
+  const user = await User.findOne({ email: req?.body?.email });
+  if (user) {
+    console.log("user already exists");
+    return res
+      .status(200)
+      .json({
+        status: "error",
+        message: "User already exists with that email address",
+      });
+  }
+  try {
+    const { email, password, fname, lname } = req?.body;
+    const hash = await bcrypt.hash(password, 10);
+    const admin = await User.create({
+      fname,
+      lname,
+      email,
+      hash,
+      usertype: "ADMIN",
+      createdBy: req?.user?.id,
+    });
+    if (!admin)
+      return res.status(500).json({ message: "Internal server error" });
+    const allAdmins = await User.find({ usertype: "ADMIN" });
+    res.status(200).json({ status: "success", users: allAdmins });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 }
 
@@ -93,9 +147,11 @@ export async function signin(req, res) {
     const user = await User.findOne({ email: body.email.toLowerCase() });
     console.log({ user });
     if (!user)
-      return res
-        .status(200)
-        .json({ status: "warning", message: "You are not registered with that email address, try signing up" });
+      return res.status(200).json({
+        status: "warning",
+        message:
+          "You are not registered with that email address, try signing up",
+      });
 
     const isMatch = await bcrypt.compare(body.password, user.hash);
     console.log({ isMatch });

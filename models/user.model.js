@@ -23,9 +23,11 @@ const userSchema = new mongoose.Schema({
   },
   usertype: {
     type: String,
-    default: "USER",
     enum: ["USER", "ADMIN"],
-    // required: true,
+    default: "USER",
+  },
+  schoolName: {
+    type: String,
   },
   currentSubscriptionPlan: {
     type: Schema.Types.ObjectId,
