@@ -44,7 +44,16 @@ export async function checkAuth(req, res) {
   }
 }
 
-export async function createAdmin(req, res) {
+export async function createUser(req, res) {
+  if (
+    !(req?.params?.usertype === "admin") &&
+    !(req?.params?.usertype === "user")
+  )
+    return res
+      .status(200)
+      .json({ status: "error", message: "No user type found" });
+  const { usertype } = req?.params;
+
   if (
     !req?.body?.email ||
     !req?.body?.password ||
@@ -58,12 +67,10 @@ export async function createAdmin(req, res) {
   const user = await User.findOne({ email: req?.body?.email });
   if (user) {
     console.log("user already exists");
-    return res
-      .status(200)
-      .json({
-        status: "error",
-        message: "User already exists with that email address",
-      });
+    return res.status(200).json({
+      status: "error",
+      message: "User already exists with that email address",
+    });
   }
   try {
     const { email, password, fname, lname } = req?.body;
@@ -73,13 +80,12 @@ export async function createAdmin(req, res) {
       lname,
       email,
       hash,
-      usertype: "ADMIN",
+      usertype: usertype.toUpperCase(),
       createdBy: req?.user?.id,
     });
     if (!admin)
       return res.status(500).json({ message: "Internal server error" });
-    const allAdmins = await User.find({ usertype: "ADMIN" });
-    res.status(200).json({ status: "success", users: allAdmins });
+    res.status(200).json({ status: "success" });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Internal Server Error" });

@@ -12,14 +12,19 @@ import {
   verifyEmail,
   resendVerificationEmail,
   fetchAllAdmins,
-  createAdmin,
+  createUser,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
 router.put("/", fetchUserMiddleware, updateUserDetails);
 
-router.post("/admins", fetchUserMiddleware, isAdminMiddleware, createAdmin);
+router.post(
+  "/create/:usertype",
+  fetchUserMiddleware,
+  isAdminMiddleware,
+  createUser
+);
 router.post("/", signup);
 
 router.patch("/", signin);
