@@ -4,28 +4,28 @@ const { Schema } = mongoose;
 const subscriptionSchema = new Schema({
   name: {
     type: String,
-    // required: true,
+    required: true,
   },
   description: {
     type: String,
-    // required: true,
+    required: true,
   },
 
   price: {
     type: Number,
-    // required: true,
+    required: true,
   },
   discountedPrice: {
     type: Number,
-    // required: true,
+    required: true,
   },
   validity: {
     type: Number, // in days
-    // required: true,
+    required: true,
   },
   seats: {
     type: Number,
-    // required: true,
+    required: true,
   },
   createdAt: {
     type: Date,

@@ -10,7 +10,7 @@ import sendEmail from "../utils/emailer.js";
 // GET /api/users
 export async function fetchAllUsers(req, res) {
   try {
-    const users = await User.find().populate("currentSubscriptionPlan");
+    const users = await User.find().populate("currentSubscriptionPlan", "name");
     if (!users) return res.status(404).json({ message: "No users found" });
     res.status(201).json({ status: "success", users });
   } catch (err) {
@@ -90,12 +90,12 @@ export async function signin(req, res) {
       .json({ status: "error", message: "Missing required fields" });
 
   try {
-    const user = await User.findOne({ email: body.email });
+    const user = await User.findOne({ email: body.email.toLowerCase() });
     console.log({ user });
     if (!user)
       return res
-        .status(401)
-        .json({ status: "error", message: "User not found" });
+        .status(200)
+        .json({ status: "warning", message: "You are not registered with that email address, try signing up" });
 
     const isMatch = await bcrypt.compare(body.password, user.hash);
     console.log({ isMatch });
@@ -190,9 +190,17 @@ export async function verifyEmail(req, res) {
 }
 
 export async function resendVerificationEmail(req, res) {
+  console.log("resend verification email called");
+  // console.log(req?.params?.email);
   try {
-    const user = await User.findOne({ email: req?.params?.email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findOne({
+      email: req?.params?.email.toLowerCase(),
+    });
+    console.log({ user });
+    if (!user)
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid credentials!" });
     await EmailVerification.deleteMany({ user: user._id });
     const newEmailVerification = await EmailVerification.create({
       user,
