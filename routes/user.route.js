@@ -13,11 +13,16 @@ import {
   resendVerificationEmail,
   fetchAllAdmins,
   createUser,
+  updateAdminDetails,
+  deleteAdmin,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
+router.delete("/:id", deleteAdmin);
+
 router.put("/", fetchUserMiddleware, updateUserDetails);
+router.put("/:id", updateAdminDetails);
 
 router.post(
   "/create/:usertype",

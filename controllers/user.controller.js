@@ -219,9 +219,29 @@ export async function updateUserDetails(req, res) {
   }
   try {
     await User.findByIdAndUpdate(req?.user?.id, req?.body);
-    const user = await User.findById(req?.user?.id).select(
-      "-hash -createdAt -_id -__v"
-    );
+    const user = await User.findById(req?.user?.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(201).json({ status: "success", user });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+export async function updateAdminDetails(req, res) {
+  console.log("update user details called");
+  const userId = req?.params?.id;
+  if (
+    req?.body?.password &&
+    req?.body?.password === req?.body?.confirmPassword
+  ) {
+    const hash = await bcrypt.hash(req.body.password, 10);
+    req.body.hash = hash;
+    delete req.body.password;
+    delete req.body.confirmPassword;
+  }
+  try {
+    await User.findByIdAndUpdate(userId, req?.body);
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(201).json({ status: "success", user });
   } catch (err) {
@@ -280,5 +300,16 @@ export async function resendVerificationEmail(req, res) {
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function deleteAdmin(req, res) {
+  const { id } = req?.params;
+  try {
+    const user = await User.findByIdAndDelete(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ status: "success", message: "User deleted" });
+  } catch (err) {
+    console.log(err.message);
   }
 }
