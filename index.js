@@ -10,7 +10,7 @@ import transactionRoutes from "./routes/transaction.route.js";
 import howItWorksRoutes from "./routes/how-it-works.route.js";
 import plagiarismItemRoutes from "./routes/plagiarism-item.route.js";
 import faqRoutes from "./routes/faq.route.js";
-
+import benefitRoutes from "./routes/benefit.route.js";
 // import path from "path";
 
 import { engine } from "express-handlebars";
@@ -54,6 +54,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/how-it-works", howItWorksRoutes);
 app.use("/api/plagiarism-item", plagiarismItemRoutes);
 app.use("/api/faq", faqRoutes);
+app.use("/api/benefit", benefitRoutes);
 
 // home route
 app.get("/", (req, res) => {
