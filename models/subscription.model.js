@@ -38,3 +38,4 @@ const subscriptionSchema = new Schema({
 });
 
 export default mongoose.model("Subscription", subscriptionSchema);
+ 

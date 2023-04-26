@@ -8,6 +8,9 @@ import userRoutes from "./routes/user.route.js";
 import subscriptionRoutes from "./routes/subscription.route.js";
 import transactionRoutes from "./routes/transaction.route.js";
 import howItWorksRoutes from "./routes/how-it-works.route.js";
+import plagiarismItemRoutes from "./routes/plagiarism-item.route.js";
+import faqRoutes from "./routes/faq.route.js";
+
 // import path from "path";
 
 import { engine } from "express-handlebars";
@@ -49,6 +52,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/how-it-works", howItWorksRoutes);
+app.use("/api/plagiarism-item", plagiarismItemRoutes);
+app.use("/api/faq", faqRoutes);
 
 // home route
 app.get("/", (req, res) => {

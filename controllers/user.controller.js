@@ -22,7 +22,7 @@ export async function fetchAllAdmins(req, res) {
   console.log("fetching all admins");
   try {
     const users = await User.find({ usertype: "ADMIN" });
-    console.log({ users });
+    // console.log({ users });
     if (!users) return res.status(404).json({ message: "No users found" });
     res.status(201).json({ status: "success", users });
   } catch (err) {
@@ -228,17 +228,20 @@ export async function updateUserDetails(req, res) {
   }
 }
 export async function updateAdminDetails(req, res) {
-  console.log("update user details called");
+  console.log("update admin details called");
+  console.log("body", req?.body);
   const userId = req?.params?.id;
   if (
     req?.body?.password &&
     req?.body?.password === req?.body?.confirmPassword
   ) {
+    console.log("changing password to ", req?.body?.password);
     const hash = await bcrypt.hash(req.body.password, 10);
     req.body.hash = hash;
     delete req.body.password;
     delete req.body.confirmPassword;
   }
+  console.log("body after hash", req?.body);
   try {
     await User.findByIdAndUpdate(userId, req?.body);
     const user = await User.findById(userId);

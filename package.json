@@ -9,7 +9,7 @@
     "dev": "nodemon index.js",
     "push": "git push origin master",
     "pull": "git pull origin master"
-  },
+    },
   "keywords": [],
   "author": "",
   "license": "ISC",
