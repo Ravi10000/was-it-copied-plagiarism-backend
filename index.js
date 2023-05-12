@@ -42,7 +42,7 @@ app.set("views", "views");
 
 // parse application/x-www-form-urlencoded and application/json
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); 
 
 // Enable CORS
 app.use(cors());
