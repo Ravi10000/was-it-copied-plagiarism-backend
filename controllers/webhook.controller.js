@@ -10,8 +10,8 @@ export const completedWebhook = async (req, res) => {
     },
     { new: true }
   );
-  console.log({ updatedScan });
   console.log("body: ", req.body);
   console.log("params: ", req.params);
+  console.log({ updatedScan });
   return;
 };
