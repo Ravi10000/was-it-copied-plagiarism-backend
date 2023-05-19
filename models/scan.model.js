@@ -12,8 +12,8 @@ const ScanSchema = new Schema({
     type: String,
     // required: true,
   },
-  result: {
-    type: String,
+  response: {
+    type: Object,
     // required: true,
   },
 });

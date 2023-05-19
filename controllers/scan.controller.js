@@ -75,7 +75,7 @@ export async function checkPlagiarism(req, res) {
               webhooks: {
                 status: `${process.env.API_URL}/api/webhooks/{STATUS}/${scan._id}`,
               },
-            }
+            },
           },
           {
             headers: {
