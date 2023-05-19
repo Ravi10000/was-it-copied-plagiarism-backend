@@ -34,9 +34,11 @@ export async function checkAuth(req, res) {
   if (!req.user) return res.status(400).json({ message: "No user found" });
 
   try {
-    const user = await User.findById(req?.user?.id).select(
-      "-hash -createdAt -_id -__v"
-    );
+    const user = await User.findById(req?.user?.id);
+    // .select(
+    //   "-hash -createdAt -_id -__v"
+    // );
+    console.log({ user });
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(201).json({ status: "success", user });
   } catch (err) {

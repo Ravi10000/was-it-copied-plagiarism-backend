@@ -11,6 +11,9 @@ import howItWorksRoutes from "./routes/how-it-works.route.js";
 import plagiarismItemRoutes from "./routes/plagiarism-item.route.js";
 import faqRoutes from "./routes/faq.route.js";
 import benefitRoutes from "./routes/benefit.route.js";
+import scanRoutes from "./routes/scan.route.js";
+import webhookRoues from "./routes/webhook.route.js";
+
 // import path from "path";
 
 import { engine } from "express-handlebars";
@@ -42,7 +45,7 @@ app.set("views", "views");
 
 // parse application/x-www-form-urlencoded and application/json
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
+app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS
 app.use(cors());
@@ -55,12 +58,14 @@ app.use("/api/how-it-works", howItWorksRoutes);
 app.use("/api/plagiarism-item", plagiarismItemRoutes);
 app.use("/api/faq", faqRoutes);
 app.use("/api/benefit", benefitRoutes);
+app.use("/api/scan", scanRoutes);
+app.use("/api/webhooks", webhookRoues);
 
 // home route
 app.get("/", (req, res) => {
-  res.send("Welcome to Plagiarism Checker API");
+  res.send("API Hosted On " + process.env.API_URL);
 });
 
 app.listen(4000, () => {
-  console.log("Plagiarism API on port 4000");
+  console.log("API URL: http://localhost:4000/api");
 });
