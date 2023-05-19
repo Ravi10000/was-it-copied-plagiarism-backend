@@ -20,8 +20,7 @@ const ScanSchema = new Schema({
     // required: true,
   },
   result: {
-    type: Map,
-    of: String,
+    type: String,
     // required: true,
   },
 });
