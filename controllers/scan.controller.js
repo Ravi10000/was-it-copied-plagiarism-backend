@@ -17,7 +17,11 @@ export async function checkPlagiarism(req, res) {
   if (!text) return res.status(400).json({ message: "No text provided" });
   if (!req?.user?.id) return res.status(400).json({ message: "No user found" });
 
-  const scan = await Scan.create({ user: req?.user?.id });
+  const scan = await Scan.create({
+    user: req?.user?.id,
+    type: "TEXT",
+    fileExtension: "txt",
+  });
   // console.log(path.dirname(__dirname), "uploads", `${scan._id}.txt`);
   const filepath = path.join(
     path.dirname(__dirname),

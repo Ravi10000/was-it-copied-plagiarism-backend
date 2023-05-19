@@ -8,6 +8,10 @@ const ScanSchema = new Schema({
     ref: "User",
     required: true,
   },
+  status: {
+    type: String,
+    default: "CREATED",
+  },
   type: {
     type: String,
     enum: ["URL", "FILE", "TEXT"],
