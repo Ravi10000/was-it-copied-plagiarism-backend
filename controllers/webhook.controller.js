@@ -6,7 +6,7 @@ export const completedWebhook = async (req, res) => {
   const updatedScan = await Scan.findByIdAndUpdate(
     scanId,
     {
-      result: req.body.stringify(),
+      result: JSON.stringify(req.body),
     },
     { new: true }
   );
