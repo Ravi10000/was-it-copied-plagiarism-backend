@@ -8,12 +8,20 @@ const ScanSchema = new Schema({
     ref: "User",
     required: true,
   },
+  type: {
+    type: String,
+    enum: ["URL", "FILE", "TEXT"],
+  },
+  fileExtension: {
+    type: String,
+  },
   text: {
     type: String,
     // required: true,
   },
-  response: {
-    type: Object,
+  result: {
+    type: Map,
+    of: String,
     // required: true,
   },
 });
