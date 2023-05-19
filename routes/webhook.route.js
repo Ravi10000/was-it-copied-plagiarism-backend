@@ -6,6 +6,5 @@ const router = express.Router();
 router.post("/completed/:scanId", completedWebhook);
 router.post("/error/:scanId", completedWebhook);
 router.post("/creditsChecked/:scanId", completedWebhook);
-router.post("/indexed/:scanId", completedWebhook);
 
 export default router;

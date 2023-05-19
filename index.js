@@ -63,8 +63,8 @@ app.use("/api/webhooks", webhookRoues);
 
 // home route
 app.get("/", (req, res) => {
-  // res.send("API Hosted On " + process.env.API_URL);
-  res.send("plagiarism checker api");
+  res.send("API Hosted On " + process.env.API_URL);
+  // res.send("plagiarism checker api");
 });
 
 app.listen(4000, () => {
