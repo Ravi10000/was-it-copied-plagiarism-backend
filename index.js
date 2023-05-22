@@ -13,8 +13,10 @@ import faqRoutes from "./routes/faq.route.js";
 import benefitRoutes from "./routes/benefit.route.js";
 import scanRoutes from "./routes/scan.route.js";
 import webhookRoues from "./routes/webhook.route.js";
+import url from "url";
 
 // import path from "path";
+export const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 import { engine } from "express-handlebars";
 // import * as url from "url";

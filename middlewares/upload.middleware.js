@@ -12,6 +12,18 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + "-" + file.originalname);
   },
 });
+const scanStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(path.dirname(__dirname), "uploads/scans"));
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
 
 const upload = multer({ storage: storage });
+const scanUpload = multer({ storage: scanStorage });
+
+export { scanUpload };
+
 export default upload;

@@ -1,99 +1,252 @@
 import Scan from "../models/scan.model.js";
 import axios from "axios";
 import base64 from "base-64";
-import utf8 from "utf8";
-// import dotenv from "dotenv";
-// dotenv.config();
+import { log } from "console";
 import fs from "fs";
-import { __dirname } from "../middlewares/upload.middleware.js";
-import path from "path";
+// import utf8 from "utf8";
+import { __dirname } from "../index.js";
+import { PdfReader } from "pdfreader";
+import WordExtractor from "word-extractor";
 
-// console.log(path.join(path.dirname(__dirname), "uploads"));
-export async function checkPlagiarism(req, res) {
-  console.log("checking plagiarism");
-  console.log("body; ", req?.body);
-  console.log("user; ", req?.user);
+export async function createScanFromText(req, res) {
+  log("checking plagiarism - text");
+  log("body: ", req?.body);
+  log("user: ", req?.user);
+  log("file: ", req?.file);
+  log("access token:  ", req?.access_token);
+
   const { text } = req?.body;
+
   if (!text) return res.status(400).json({ message: "No text provided" });
   if (!req?.user?.id) return res.status(400).json({ message: "No user found" });
+  if (!req?.access_token)
+    return res.status(400).json({ message: "Access Token not generated" });
 
   const scan = await Scan.create({
     user: req?.user?.id,
     type: "TEXT",
-    fileExtension: "txt",
+    title: text.slice(0, 50),
   });
-  // console.log(path.dirname(__dirname), "uploads", `${scan._id}.txt`);
-  const filepath = path.join(
-    path.dirname(__dirname),
-    "uploads",
-    `scans/${scan._id}.txt`
-  );
-  fs.writeFile(filepath, text, (err) => {
-    if (err) {
-      return console.error(err);
+  log({ scan });
+  log({ __dirname });
+  fs.writeFile(
+    `${__dirname}/uploads/scans/${scan._id}.txt`,
+    text,
+    function (err) {
+      if (err) log(err);
     }
+  );
+  const copyleaksResponse = await sendTextToCopyleakes(
+    text,
+    scan,
+    req?.access_token
+  );
+  if (copyleaksResponse.status === "error")
+    res.status(500).json({ message: copyleaksResponse.message });
+  if (copyleaksResponse.status === "success")
+    res.status(201).json({ status: "success", scan });
+}
 
-    // If no error the remaining code executes
-    console.log(" Finished writing ");
-    console.log("Reading the data that's written");
+export async function createScanFromFile(req, res) {
+  log("checking plagiarism - file");
+  log("body: ", req?.body);
+  log("user: ", req?.user);
+  log("file: ", req?.file);
+  log("access token:  ", req?.access_token);
 
-    // Reading the file
-    fs.readFile(filepath, async function (err, text) {
-      if (err) {
-        return console.error(err);
-      }
-      // console.log({ text });
+  const { file, user, access_token } = req;
+  if (!user?.id) return res.status(400).json({ message: "No user found" });
+  if (!access_token)
+    return res.status(400).json({ message: "Access Token not generated" });
+  if (!file) return res.status(400).json({ message: "No file provided" });
 
-      const encodedText = base64.encode(text);
-      console.log("encoded text: ", encodedText);
-      // console.log("base64 decoded: ", base64.decode(encodedText));
+  const fileExtension = file?.originalname.split(".")?.pop();
 
-      try {
-        const tokenResponse = await axios.post(
-          process.env.COPYLEAKS_LOGIN_URL,
-          {
-            email: process.env.COPYLEAKS_EMAIL,
-            key: process.env.COPYLEAKS_API_KEY,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (tokenResponse.status !== 200)
-          return res.status(500).json({ message: "Copyleaks server error" });
-        const { access_token } = tokenResponse.data;
+  if (fileExtension.toLowerCase() === "pdf") {
+    try {
+      const pdfReader = new PdfReader();
+      let textContent = "";
+      pdfReader.parseFileItems(file.path, async function (err, item) {
+        if (err)
+          return res.status(500).json({ message: "File cannot be read" });
+        if (!item) {
+          log({ textContent });
+          const scan = await Scan.create({
+            user: user?.id,
+            type: "FILE",
+            fileExtension: "pdf",
+            title: textContent?.slice(0, 50),
+          });
+          fs.writeFile(
+            `${file.destination}/${scan._id}.txt`,
+            textContent,
+            function (err) {
+              if (err) log(err);
+            }
+          );
+          const copyleaksResponse = await sendTextToCopyleakes(
+            textContent,
+            scan,
+            access_token
+          );
+          if (copyleaksResponse.status === "error")
+            return res.status(500).json({ message: copyleaksResponse.message });
+          if (copyleaksResponse.status === "success")
+            return res.status(201).json({ status: "success", scan });
+        }
+        if (item?.text) textContent += item?.text;
+      });
+    } catch (err) {
+      log(err);
+    }
+  }
+  if (
+    fileExtension.toLowerCase() === "docx" ||
+    fileExtension.toLowerCase() === "doc"
+  ) {
+    const extractor = new WordExtractor();
+    const extracted = await extractor.extract(file.path);
+    const text = extracted.getBody();
+    log({ text });
 
-        if (!access_token)
-          return res.status(500).json({ message: "Copyleaks server error" });
-
-        console.log("access token: ", access_token);
-
-        const response = await axios.put(
-          `${process.env.COPYLEAKS_BASE_URL}/v3/scans/submit/file/${scan._id}`,
-          {
-            base64: `${encodedText}`,
-            filename: `${scan._id}.txt`,
-            properties: {
-              webhooks: {
-                status: `${process.env.API_URL}/api/webhooks/{STATUS}/${scan._id}`,
-              },
-            },
-          },
-          {
-            headers: {
-              "Content-type": "application/json",
-              Authorization: `Bearer ${access_token}`,
-            },
-          }
-        );
-        console.log({ response });
-        res.status(201).json({ status: "success", scan });
-      } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Internal server error" });
-      }
+    const scan = await Scan.create({
+      user: user?.id,
+      type: "FILE",
+      fileExtension,
+      title: text?.slice(0, 50),
     });
-  });
+    fs.writeFile(`${file.destination}/${scan._id}.txt`, text, function (err) {
+      if (err) log(err);
+    });
+    const copyleaksResponse = await sendTextToCopyleakes(
+      text,
+      scan,
+      access_token
+    );
+    if (copyleaksResponse.status === "error")
+      return res.status(500).json({ message: copyleaksResponse.message });
+    if (copyleaksResponse.status === "success")
+      return res.status(201).json({ status: "success", scan });
+  }
+
+  if (fileExtension.toLowerCase() === "txt")
+    fs.readFile(file.path, async function (err, text) {
+      if (err) return res.status(500).json({ message: "File cannot be read" });
+      const scan = await Scan.create({
+        user: user?.id,
+        type: "FILE",
+        fileExtension: "txt",
+        filePath: file.path,
+        title: text?.toString()?.slice(0, 50),
+      });
+      const copyleaksResponse = await sendTextToCopyleakes(
+        text,
+        scan,
+        access_token
+      );
+      if (copyleaksResponse.status === "error")
+        return res.status(500).json({ message: copyleaksResponse.message });
+      if (copyleaksResponse.status === "success")
+        return res.status(201).json({ status: "success", scan });
+    });
+}
+
+export async function getMyScans(req, res) {
+  log("get my scans");
+  try {
+    const { limit, skip } = req?.query;
+    log({ limit, skip });
+    if (!req?.user?.id)
+      return res.status(400).json({ message: "No user found" });
+
+    const scans = await Scan.find({ user: req?.user?.id })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    const scanCount = await Scan.countDocuments();
+    if (!scans) return res.status(404).json({ message: "No scans found" });
+    res.status(201).json({ status: "success", scans, scanCount });
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+export async function getAllScans(req, res) {
+  log("get all scans");
+  const { limit, skip } = req?.query;
+  try {
+    const scans = await Scan.find()
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    const scanCount = await Scan.countDocuments();
+    if (!scans) return res.status(404).json({ message: "No scans found" });
+    res.status(201).json({ status: "success", scans, scanCount });
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+export async function getScanById(req, res) {
+  log("get scan by id");
+  const { id } = req?.params;
+  try {
+    const scan = await Scan.findById(id);
+    if (!scan) return res.status(404).json({ message: "No scan found" });
+    // if (scan.type === "FILE" && scan.fileExtension === "pdf") {
+    if (scan.type === "FILE" && scan.fileExtension === "txt") {
+      fs.readFile(scan.filePath, function (err, text) {
+        if (err) log(err);
+        return res.status(201).json({
+          status: "success",
+          scan,
+          text: text?.toString(),
+        });
+      });
+    } else {
+      fs.readFile(
+        `${__dirname}/uploads/scans/${scan._id}.txt`,
+        function (err, text) {
+          if (err) log(err);
+          res.status(201).json({
+            status: "success",
+            scan,
+            text: text?.toString(),
+          });
+        }
+      );
+    }
+    // }
+  } catch (err) {
+    log(err);
+  }
+}
+async function sendTextToCopyleakes(text, scan, access_token) {
+  const encodedText = base64.encode(text);
+  try {
+    const response = await axios.put(
+      `${process.env.COPYLEAKS_BASE_URL}/v3/scans/submit/file/${scan._id}`,
+      {
+        base64: `${encodedText}`,
+        filename: `${scan._id}.txt`,
+        properties: {
+          webhooks: {
+            status: `${process.env.API_URL}/api/webhooks/{STATUS}/${scan._id}`,
+          },
+        },
+      },
+      {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+    log({ responseStatus: response.status });
+    return { status: "success", scan };
+  } catch (err) {
+    return { status: "error", message: "Internal server error" };
+  }
 }

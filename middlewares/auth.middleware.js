@@ -15,7 +15,7 @@ export const fetchUserMiddleware = async (req, res, next) => {
       req.user = null;
       return next();
     }
-    const user = await jwt.verify(token, process.env.JWT_SECRET);
+    const user = jwt.verify(token, process.env.JWT_SECRET);
     //user _id decode hojayegi
     // this is how we are going to manage user session
     console.log({ user });

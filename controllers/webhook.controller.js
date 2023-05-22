@@ -32,19 +32,19 @@ export const errorScanWebhook = async (req, res) => {
   console.log({ updatedScan });
   return;
 };
-// export const creditsChecked = async (req, res) => {
-//   console.log("copyleaks completed");
-//   const { scanId } = req?.params;
-//   const updatedScan = await Scan.findByIdAndUpdate(
-//     scanId,
-//     {
-//       status: "CREDITCHECKED",
-//       result: JSON.stringify(req.body),
-//     },
-//     { new: true }
-//   );
-//   console.log("body: ", req.body);
-//   console.log("params: ", req.params);
-//   console.log({ updatedScan });
-//   return;
-// };
+export const creditsChecked = async (req, res) => {
+  console.log("copyleaks completed");
+  const { scanId } = req?.params;
+  const updatedScan = await Scan.findByIdAndUpdate(
+    scanId,
+    {
+      status: "CREDITS_CHECKED",
+      result: JSON.stringify(req.body),
+    },
+    { new: true }
+  );
+  console.log("body: ", req.body);
+  console.log("params: ", req.params);
+  console.log({ updatedScan });
+  return;
+};

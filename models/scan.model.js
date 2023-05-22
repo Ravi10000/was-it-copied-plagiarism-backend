@@ -19,13 +19,20 @@ const ScanSchema = new Schema({
   fileExtension: {
     type: String,
   },
-  text: {
+  title: {
     type: String,
     // required: true,
   },
   result: {
     type: String,
     // required: true,
+  },
+  filePath: {
+    type: String,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 
