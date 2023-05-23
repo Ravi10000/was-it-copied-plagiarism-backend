@@ -9,10 +9,17 @@ import sendEmail from "../utils/emailer.js";
 
 // GET /api/users
 export async function fetchAllUsers(req, res) {
+  const { limit, skip } = req?.query;
   try {
-    const users = await User.find().populate("currentSubscriptionPlan", "name");
+    const users = await User.find()
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .populate("currentSubscriptionPlan", "name");
+
+    const usersCount = await User.countDocuments();
     if (!users) return res.status(404).json({ message: "No users found" });
-    res.status(201).json({ status: "success", users });
+    res.status(201).json({ status: "success", users, usersCount });
   } catch (err) {
     console.log(err.message);
   }
@@ -20,11 +27,17 @@ export async function fetchAllUsers(req, res) {
 
 export async function fetchAllAdmins(req, res) {
   console.log("fetching all admins");
+  const { skip, limit } = req?.query;
   try {
-    const users = await User.find({ usertype: "ADMIN" });
+    const admins = await User.find({ usertype: "ADMIN" })
+      .sort({ createdAt: -1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit));
+    const adminsCount = await User.countDocuments({ usertype: "ADMIN" });
+
     // console.log({ users });
-    if (!users) return res.status(404).json({ message: "No users found" });
-    res.status(201).json({ status: "success", users });
+    if (!admins) return res.status(404).json({ message: "No users found" });
+    res.status(201).json({ status: "success", admins, adminsCount });
   } catch (err) {
     console.log(err.message);
   }
