@@ -7,6 +7,7 @@ import fs from "fs";
 import { __dirname } from "../index.js";
 import { PdfReader } from "pdfreader";
 import WordExtractor from "word-extractor";
+import csvtojson from "csvtojson";
 
 export async function createScanFromText(req, res) {
   log("checking plagiarism - text");
@@ -223,6 +224,63 @@ export async function getScanById(req, res) {
     log(err);
   }
 }
+export async function getCredits(req, res) {
+  try {
+    if (!req?.access_token)
+      return res.status(400).json({ message: "Access Token not generated" });
+
+    const copyleaksResponse = await axios.get(
+      `${process.env.COPYLEAKS_BASE_URL}/v3/scans/credits`,
+      {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${req?.access_token}`,
+        },
+      }
+    );
+    log({
+      copyleaksResponse: copyleaksResponse?.data,
+      status: copyleaksResponse?.status,
+    });
+    if (copyleaksResponse.status === 401)
+      return res.status(401).json({ message: "Unauthorized" });
+
+    if (copyleaksResponse.status === 200)
+      return res
+        .status(200)
+        .json({ status: "success", credits: copyleaksResponse?.data?.Amount });
+  } catch (err) {
+    log(err);
+  }
+}
+
+export async function getUsageHistory(req, res) {
+  const { startDate, endDate } = req?.query;
+  try {
+    const copyleaksResponse = await axios.get(
+      `${process.env.COPYLEAKS_BASE_URL}/v3/scans/usages/history?start=${startDate}&end=${endDate}`,
+      {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${req?.access_token}`,
+        },
+      }
+    );
+    log({
+      copyleaksResponse,
+    });
+    const jsonData = await csvtojson({
+      noheader: true,
+      output: "csv",
+    }).fromString(copyleaksResponse?.data);
+    log({ jsonData });
+    res.status(200).json({ status: "success", usageHistory: jsonData });
+  } catch (err) {
+    log(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 async function sendTextToCopyleakes(text, scan, access_token) {
   const encodedText = base64.encode(text);
   try {
@@ -234,6 +292,9 @@ async function sendTextToCopyleakes(text, scan, access_token) {
         properties: {
           webhooks: {
             status: `${process.env.API_URL}/api/webhooks/{STATUS}/${scan._id}`,
+          },
+          aiGeneratedText: {
+            detect: true,
           },
         },
       },

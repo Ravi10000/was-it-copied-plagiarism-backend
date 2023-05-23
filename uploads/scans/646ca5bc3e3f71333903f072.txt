@@ -1,0 +1,2 @@
+Copyleaks API allows you to integrate your systems and services with the Copyleaks plagiarism detection products.
+Interact with Copyleaks API by sending HTTP requests to Copyleaks servers. To do so, first register to Copyleaks and get your API key. Use your API key and email address to login.

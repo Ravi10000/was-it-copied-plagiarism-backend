@@ -3,8 +3,10 @@ import {
   createScanFromFile,
   createScanFromText,
   getAllScans,
+  getCredits,
   getMyScans,
   getScanById,
+  getUsageHistory,
 } from "../controllers/scan.controller.js";
 import upload, { scanUpload } from "../middlewares/upload.middleware.js";
 import {
@@ -30,6 +32,20 @@ router.post(
   createScanFromFile
 );
 router.get("/", fetchUserMiddleware, getMyScans);
+router.get(
+  "/credits",
+  fetchUserMiddleware,
+  isAdminMiddleware,
+  generateAccessToken,
+  getCredits
+);
+router.get(
+  "/history",
+  fetchUserMiddleware,
+  isAdminMiddleware,
+  generateAccessToken,
+  getUsageHistory
+);
 router.get("/all", fetchUserMiddleware, isAdminMiddleware, getAllScans);
 router.get("/:id", fetchUserMiddleware, getScanById);
 
