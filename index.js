@@ -70,5 +70,6 @@ app.get("/", (req, res) => {
 });
 
 app.listen(4000, () => {
-  console.log("API URL: http://localhost:4000/api");
+  console.log("LOCAL API URL: http://localhost:4000/api");
+  console.log("PRODUCTION API URL: " + process.env.API_URL);
 });

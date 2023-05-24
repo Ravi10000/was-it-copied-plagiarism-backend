@@ -238,6 +238,9 @@ export async function getCredits(req, res) {
         },
       }
     );
+    if (copyleaksResponse.status === 429) {
+      return res.status(429).json({ message: "Too many requests" });
+    }
     log({
       copyleaksResponse: copyleaksResponse?.data,
       status: copyleaksResponse?.status,
@@ -266,6 +269,9 @@ export async function getUsageHistory(req, res) {
         },
       }
     );
+    if (copyleaksResponse.status === 429) {
+      return res.status(429).json({ message: "Too many requests" });
+    }
     log({
       copyleaksResponse,
     });
