@@ -193,6 +193,9 @@ export async function getAllScans(req, res) {
 export async function getScanById(req, res) {
   log("get scan by id");
   const { id } = req?.params;
+  console.log({ id });
+  if (!id) return res.status(400).json({ message: "No id provided" });
+
   try {
     const scan = await Scan.findById(id);
     if (!scan) return res.status(404).json({ message: "No scan found" });
