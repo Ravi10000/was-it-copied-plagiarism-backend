@@ -135,7 +135,7 @@ export async function signup(req, res) {
     const newEmailVerification = await EmailVerification.create({
       user: newUser?._id,
     });
-    const verificationLink = `${process.env.API_URL}/api/users/${newEmailVerification._id}`;
+    const verificationLink = `${process.env.APP_URL}/api/users/${newEmailVerification._id}`;
     const mail = await sendEmail({
       to: newUser?.email,
       verificationLink,
