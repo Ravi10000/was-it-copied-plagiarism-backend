@@ -305,7 +305,7 @@ export async function resendVerificationEmail(req, res) {
     const newEmailVerification = await EmailVerification.create({
       user,
     });
-    const verificationLink = `http://localhost:4000/api/users/${newEmailVerification._id}`;
+    const verificationLink = `${process.env.APP_URL}/api/users/${newEmailVerification._id}`;
     const mail = await sendEmail({
       to: user?.email,
       verificationLink,
