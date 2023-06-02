@@ -165,7 +165,7 @@ export async function getMyScans(req, res) {
       .limit(parseInt(limit))
       .skip(parseInt(skip));
 
-    const scanCount = await Scan.countDocuments();
+    const scanCount = await Scan.find({ user: req?.user?.id }).count();
     if (!scans) return res.status(404).json({ message: "No scans found" });
     res.status(201).json({ status: "success", scans, scanCount });
   } catch (err) {
@@ -262,6 +262,7 @@ export async function getCredits(req, res) {
 
 export async function getUsageHistory(req, res) {
   const { startDate, endDate } = req?.query;
+  console.log({ startDate, endDate });
   try {
     const copyleaksResponse = await axios.get(
       `${process.env.COPYLEAKS_BASE_URL}/v3/scans/usages/history?start=${startDate}&end=${endDate}`,
@@ -285,7 +286,7 @@ export async function getUsageHistory(req, res) {
     log({ jsonData });
     res.status(200).json({ status: "success", usageHistory: jsonData });
   } catch (err) {
-    log(err);
+    log(err.message);
     res.status(500).json({ message: "Internal server error" });
   }
 }
