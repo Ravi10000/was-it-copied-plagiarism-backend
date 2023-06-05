@@ -3,7 +3,7 @@ import axios from "axios";
 import base64 from "base-64";
 import { log } from "console";
 import fs from "fs";
-// import utf8 from "utf8";
+import utf8 from "utf8";
 import { __dirname } from "../index.js";
 import { PdfReader } from "pdfreader";
 import WordExtractor from "word-extractor";
@@ -78,15 +78,20 @@ export async function createScanFromFile(req, res) {
             fileExtension: "pdf",
             title: textContent?.slice(0, 50),
           });
-          fs.writeFile(
-            `${file.destination}/${scan._id}.txt`,
-            textContent,
-            function (err) {
-              if (err) log(err);
-            }
-          );
+          try {
+            fs.writeFile(
+              `${file.destination}/${scan._id}.txt`,
+              utf8.encode(textContent),
+              function (err) {
+                if (err) log(err);
+              }
+            );
+          } catch (err) {
+            res.status(500).json({ message: "File cannot be read" });
+            log(err);
+          }
           const copyleaksResponse = await sendTextToCopyleakes(
-            textContent,
+            utf8.decode(textContent),
             scan,
             access_token
           );
@@ -290,6 +295,18 @@ export async function getUsageHistory(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+// export async function searchScan(req, res) {
+//   const { q } = req?.query;
+//   try {
+//     const scans = await Scan.find({ $text: { $search: q } });
+//     log({ scans });
+//     res.status(200).json({ status: "success", scans });
+//   } catch (err) {
+//     log(err);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// }
 
 async function sendTextToCopyleakes(text, scan, access_token) {
   const encodedText = base64.encode(text);
