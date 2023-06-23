@@ -93,7 +93,7 @@ export async function createScanFromFile(req, res) {
             log(err);
           }
           const copyleaksResponse = await sendTextToCopyleakes(
-            utf8.decode(textContent),
+            textContent,
             scan,
             access_token
           );
