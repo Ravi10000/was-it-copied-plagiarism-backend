@@ -87,7 +87,9 @@ export async function createScanFromFile(req, res) {
               }
             );
           } catch (err) {
-            res.status(500).json({ message: "File cannot be read" });
+            res
+              .status(500)
+              .json({ status: "error", message: "File cannot be read" });
             log(err);
           }
           const copyleaksResponse = await sendTextToCopyleakes(

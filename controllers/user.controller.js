@@ -108,7 +108,6 @@ export async function createUser(req, res) {
 }
 
 export async function signup(req, res) {
-  console.log("signup called");
   if (!req.body) return res.status(400).json({ message: "No data provided" });
   const { fname, lname, email, password } = req?.body;
 
@@ -135,7 +134,7 @@ export async function signup(req, res) {
     const newEmailVerification = await EmailVerification.create({
       user: newUser?._id,
     });
-    const verificationLink = `${process.env.APP_URL}/api/users/${newEmailVerification._id}`;
+    const verificationLink = `${process.env.API_URL}/api/users/${newEmailVerification._id}`;
     const mail = await sendEmail({
       to: newUser?.email,
       verificationLink,
@@ -181,7 +180,7 @@ export async function signin(req, res) {
         .status(200)
         .json({ status: "error", message: "Invalid credentials" });
 
-    await EmailVerification.deleteMany({ user: user._id });
+    // await EmailVerification.deleteMany({ user: user._id });
 
     if (!user?.isVerified) {
       const newEmailVerification = await EmailVerification.create({
@@ -199,7 +198,7 @@ export async function signin(req, res) {
     }
 
     const authToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1y",
+      expiresIn: "7d",
     });
 
     res.status(200).json({
@@ -281,7 +280,7 @@ export async function verifyEmail(req, res) {
     if (!user) return res.status(404).json({ message: "User not found" });
     user.isVerified = true;
     await user.save();
-    await EmailVerification.findByIdAndDelete(verification._id);
+    // await EmailVerification.findByIdAndDelete(verification._id);
     res.redirect(`${process.env.APP_URL}/verified`);
   } catch (err) {
     console.log(err.message);

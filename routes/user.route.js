@@ -37,6 +37,7 @@ router.patch("/", signin);
 router.get("/user", fetchUserMiddleware, checkAuth);
 router.get("/admins", fetchUserMiddleware, isAdminMiddleware, fetchAllAdmins);
 router.get("/verify/:email", resendVerificationEmail);
+
 router.get("/:token", verifyEmail);
 router.get("/", fetchUserMiddleware, isAdminMiddleware, fetchAllUsers);
 
