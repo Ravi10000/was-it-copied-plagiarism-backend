@@ -3,7 +3,6 @@ import axios from "axios";
 import base64 from "base-64";
 import { log } from "console";
 import fs from "fs";
-import utf8 from "utf8";
 import { __dirname } from "../index.js";
 import { PdfReader } from "pdfreader";
 import WordExtractor from "word-extractor";
@@ -30,16 +29,18 @@ export async function createScanFromText(req, res) {
   });
   log({ scan });
   log({ __dirname });
-  fs.writeFile(
-    `${__dirname}/uploads/scans/${scan._id}.txt`,
-    text,
-    function (err) {
-      if (err) log(err);
-    }
-  );
+  // fs.writeFile(
+  //   `${__dirname}/uploads/scans/${scan._id}.txt`,
+  //   text,
+  //   function (err) {
+  //     if (err) log(err);
+  //   }
+  // );
+  // const base64Text = base64.encode(text);
   const copyleaksResponse = await sendTextToCopyleakes(
     text,
     scan,
+    ".txt",
     req?.access_token
   );
   if (copyleaksResponse.status === "error")
@@ -71,35 +72,43 @@ export async function createScanFromFile(req, res) {
         if (err)
           return res.status(500).json({ message: "File cannot be read" });
         if (!item) {
-          log({ textContent });
           const scan = await Scan.create({
             user: user?.id,
             type: "FILE",
             fileExtension: "pdf",
+            filePath: file.path,
             title: textContent?.slice(0, 50),
           });
-          try {
-            fs.writeFile(
-              `${file.destination}/${scan._id}.txt`,
-              utf8.encode(textContent),
-              function (err) {
-                if (err) log(err);
-              }
-            );
-          } catch (err) {
-            res
-              .status(500)
-              .json({ status: "error", message: "File cannot be read" });
-            log(err);
-          }
+          console.log({ scan });
+          // try {
+          //   fs.writeFile(
+          //     `${file.destination}/${scan._id}.txt`,
+          //     utf8.encode(textContent),
+          //     function (err) {
+          //       if (err) log(err);
+          //     }
+          //   );
+          // } catch (err) {
+          //   res
+          //     .status(500)
+          //     .json({ status: "error", message: "File cannot be read" });
+          //   log(err);
+          // }
+          log({ textContent: textContent?.slice(0, 50) });
+          console.log("sending to copyleaks");
+          // utf8.decode(textContent),
+
+          const base64Text = fs.readFileSync(file.path, { encoding: "base64" });
           const copyleaksResponse = await sendTextToCopyleakes(
-            textContent,
+            base64Text,
             scan,
+            ".pdf",
             access_token
           );
-          if (copyleaksResponse.status === "error")
+          console.log("CopyLeaks Res: ",copyleaksResponse);
+          if (copyleaksResponse?.status === "error")
             return res.status(500).json({ message: copyleaksResponse.message });
-          if (copyleaksResponse.status === "success")
+          if (copyleaksResponse?.status === "success")
             return res.status(201).json({ status: "success", scan });
         }
         if (item?.text) textContent += item?.text;
@@ -121,6 +130,7 @@ export async function createScanFromFile(req, res) {
       user: user?.id,
       type: "FILE",
       fileExtension,
+      filePath: file.path,
       title: text?.slice(0, 50),
     });
     fs.writeFile(`${file.destination}/${scan._id}.txt`, text, function (err) {
@@ -129,6 +139,7 @@ export async function createScanFromFile(req, res) {
     const copyleaksResponse = await sendTextToCopyleakes(
       text,
       scan,
+      "."+fileExtension,
       access_token
     );
     if (copyleaksResponse.status === "error")
@@ -150,6 +161,7 @@ export async function createScanFromFile(req, res) {
       const copyleaksResponse = await sendTextToCopyleakes(
         text,
         scan,
+        ".txt",
         access_token
       );
       if (copyleaksResponse.status === "error")
@@ -187,7 +199,10 @@ export async function getAllScans(req, res) {
     const scans = await Scan.find()
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
-      .skip(parseInt(skip));
+      .skip(parseInt(skip))
+      .populate("user", "fname lname email");
+
+    console.log({ scans });
 
     const scanCount = await Scan.countDocuments();
     if (!scans) return res.status(404).json({ message: "No scans found" });
@@ -207,7 +222,7 @@ export async function getScanById(req, res) {
     const scan = await Scan.findById(id);
     if (!scan) return res.status(404).json({ message: "No scan found" });
     // if (scan.type === "FILE" && scan.fileExtension === "pdf") {
-    if (scan.type === "FILE" && scan.fileExtension === "txt") {
+    if (scan.type === "FILE") {
       fs.readFile(scan.filePath, function (err, text) {
         if (err) log(err);
         return res.status(201).json({
@@ -218,7 +233,7 @@ export async function getScanById(req, res) {
       });
     } else {
       fs.readFile(
-        `${__dirname}/uploads/scans/${scan._id}.txt`,
+        `${__dirname}uploads/scans/${scan._id}.${scan.fileExtension}`,
         function (err, text) {
           if (err) log(err);
           res.status(201).json({
@@ -310,14 +325,14 @@ export async function getUsageHistory(req, res) {
 //   }
 // }
 
-async function sendTextToCopyleakes(text, scan, access_token) {
-  const encodedText = base64.encode(text);
+async function sendTextToCopyleakes(text, scan, fileExtension, access_token) {
   try {
+    const encodedText = base64.encode(text);
     const response = await axios.put(
       `${process.env.COPYLEAKS_BASE_URL}/v3/scans/submit/file/${scan._id}`,
       {
         base64: `${encodedText}`,
-        filename: `${scan._id}.txt`,
+        filename: `${scan._id}${fileExtension}`,
         properties: {
           webhooks: {
             status: `${process.env.API_URL}/api/webhooks/{STATUS}/${scan._id}`,
@@ -337,6 +352,7 @@ async function sendTextToCopyleakes(text, scan, access_token) {
     log({ responseStatus: response.status });
     return { status: "success", scan };
   } catch (err) {
+    console.log(err);
     return { status: "error", message: "Internal server error" };
   }
 }
