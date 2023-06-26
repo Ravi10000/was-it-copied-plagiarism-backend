@@ -40,6 +40,7 @@ export async function createScanFromText(req, res) {
   const copyleaksResponse = await sendTextToCopyleakes(
     text,
     scan,
+    ".txt",
     req?.access_token
   );
   if (copyleaksResponse.status === "error")
@@ -75,6 +76,7 @@ export async function createScanFromFile(req, res) {
             user: user?.id,
             type: "FILE",
             fileExtension: "pdf",
+            filePath: file.path,
             title: textContent?.slice(0, 50),
           });
           console.log({ scan });
@@ -100,8 +102,10 @@ export async function createScanFromFile(req, res) {
           const copyleaksResponse = await sendTextToCopyleakes(
             base64Text,
             scan,
+            ".pdf",
             access_token
           );
+          console.log("CopyLeaks Res: ",copyleaksResponse);
           if (copyleaksResponse?.status === "error")
             return res.status(500).json({ message: copyleaksResponse.message });
           if (copyleaksResponse?.status === "success")
@@ -126,6 +130,7 @@ export async function createScanFromFile(req, res) {
       user: user?.id,
       type: "FILE",
       fileExtension,
+      filePath: file.path,
       title: text?.slice(0, 50),
     });
     fs.writeFile(`${file.destination}/${scan._id}.txt`, text, function (err) {
@@ -134,6 +139,7 @@ export async function createScanFromFile(req, res) {
     const copyleaksResponse = await sendTextToCopyleakes(
       text,
       scan,
+      "."+fileExtension,
       access_token
     );
     if (copyleaksResponse.status === "error")
@@ -155,6 +161,7 @@ export async function createScanFromFile(req, res) {
       const copyleaksResponse = await sendTextToCopyleakes(
         text,
         scan,
+        ".txt",
         access_token
       );
       if (copyleaksResponse.status === "error")
@@ -215,7 +222,7 @@ export async function getScanById(req, res) {
     const scan = await Scan.findById(id);
     if (!scan) return res.status(404).json({ message: "No scan found" });
     // if (scan.type === "FILE" && scan.fileExtension === "pdf") {
-    if (scan.type === "FILE" && scan.fileExtension === "txt") {
+    if (scan.type === "FILE") {
       fs.readFile(scan.filePath, function (err, text) {
         if (err) log(err);
         return res.status(201).json({
@@ -226,7 +233,7 @@ export async function getScanById(req, res) {
       });
     } else {
       fs.readFile(
-        `${__dirname}/uploads/scans/${scan._id}.txt`,
+        `${__dirname}uploads/scans/${scan._id}.${scan.fileExtension}`,
         function (err, text) {
           if (err) log(err);
           res.status(201).json({
@@ -318,14 +325,14 @@ export async function getUsageHistory(req, res) {
 //   }
 // }
 
-async function sendTextToCopyleakes(text, scan, access_token) {
+async function sendTextToCopyleakes(text, scan, fileExtension, access_token) {
   try {
     const encodedText = base64.encode(text);
     const response = await axios.put(
       `${process.env.COPYLEAKS_BASE_URL}/v3/scans/submit/file/${scan._id}`,
       {
         base64: `${encodedText}`,
-        filename: `${scan._id}.txt`,
+        filename: `${scan._id}${fileExtension}`,
         properties: {
           webhooks: {
             status: `${process.env.API_URL}/api/webhooks/{STATUS}/${scan._id}`,
