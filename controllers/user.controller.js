@@ -198,12 +198,16 @@ export async function signin(req, res) {
     }
 
     const authToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "60s",
+    });
+    const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
     res.status(200).json({
       status: "success",
       authToken,
+      refreshToken,
       user: {
         fname: user?.fname,
         lname: user?.lname,

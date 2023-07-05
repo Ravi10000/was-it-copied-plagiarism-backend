@@ -65,3 +65,29 @@ export const isAdminMiddleware = async (req, res, next) => {
   }
   next();
 };
+
+// export const refreshTokenMiddleware = async (req, res, next) => {
+//   try {
+//     if (req?.body?.refreshToken) {
+//       const refreshToken = req.body.refreshToken;
+//       const user = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+//       const newToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+//         expiresIn: "1h",
+//       });
+//       const newRefreshToken = jwt.sign(
+//         { id: user._id },
+//         process.env.JWT_SECRET,
+//         {
+//           expiresIn: "7d",
+//         }
+//       );
+//       return res.status(200).json({ authToken: newToken });
+//     } else {
+//       next();
+//     }
+//   } catch (err) {
+//     console.log(err);
+//     return res.status(401).json({ message: "Invalid Refresh Token" });
+//   }
+// };

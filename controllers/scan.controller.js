@@ -202,7 +202,7 @@ export async function getAllScans(req, res) {
       .skip(parseInt(skip))
       .populate("user", "fname lname email");
 
-    console.log({ scans });
+    // console.log({ scans });
 
     const scanCount = await Scan.countDocuments();
     if (!scans) return res.status(404).json({ message: "No scans found" });
