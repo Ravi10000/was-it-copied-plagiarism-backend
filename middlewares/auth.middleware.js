@@ -42,11 +42,13 @@ export const fetchUserMiddleware = async (req, res, next) => {
     if (token == "null" || !token) return next();
 
     const jwtExpiry = jwt.decode(token).exp;
-    const now = new Date().valueOf() / 1000;
+    const now = Math.floor(Date.now() / 1000);
+
     if (jwtExpiry < now) return next();
 
     try {
       req.user = jwt.verify(token, process.env.JWT_SECRET);
+      console.log({ userAfterVerify: req.user });
       return next();
     } catch (err) {
       console.log(err.message);
