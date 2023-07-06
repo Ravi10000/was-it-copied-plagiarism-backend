@@ -12,7 +12,6 @@ export async function createScanFromText(req, res) {
   log("checking plagiarism - text");
   log("body: ", req?.body);
   log("user: ", req?.user);
-  log("file: ", req?.file);
   log("access token:  ", req?.access_token);
 
   const { text } = req?.body;
@@ -105,7 +104,7 @@ export async function createScanFromFile(req, res) {
             ".pdf",
             access_token
           );
-          console.log("CopyLeaks Res: ",copyleaksResponse);
+          console.log("CopyLeaks Res: ", copyleaksResponse);
           if (copyleaksResponse?.status === "error")
             return res.status(500).json({ message: copyleaksResponse.message });
           if (copyleaksResponse?.status === "success")
@@ -139,7 +138,7 @@ export async function createScanFromFile(req, res) {
     const copyleaksResponse = await sendTextToCopyleakes(
       text,
       scan,
-      "."+fileExtension,
+      "." + fileExtension,
       access_token
     );
     if (copyleaksResponse.status === "error")
@@ -326,12 +325,19 @@ export async function getUsageHistory(req, res) {
 // }
 
 async function sendTextToCopyleakes(text, scan, fileExtension, access_token) {
+  log({
+    text,
+    scan,
+    fileExtension,
+    access_token,
+  });
   try {
     const encodedText = base64.encode(text);
+    console.log({ encodedText });
     const response = await axios.put(
       `${process.env.COPYLEAKS_BASE_URL}/v3/scans/submit/file/${scan._id}`,
       {
-        base64: `${encodedText}`,
+        base64: encodedText,
         filename: `${scan._id}${fileExtension}`,
         properties: {
           webhooks: {
@@ -353,6 +359,6 @@ async function sendTextToCopyleakes(text, scan, fileExtension, access_token) {
     return { status: "success", scan };
   } catch (err) {
     console.log(err);
-    return { status: "error", message: "Internal server error" };
+    return { status: "error", message: "Copyleaks Error", error: err.message };
   }
 }
